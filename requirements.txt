@@ -1,0 +1,14 @@
+langchain
+langchain-huggingface
+langchain-pinecone
+langchain-text-splitters
+langchain-experimental~=0.3.4
+fastapi
+uvicorn
+pydantic
+httpx
+pytest
+pytest-asyncio
+langchain-core~=0.3.74
+langchain-openai~=0.3.31
+pypdf~=6.0.0
