@@ -1,24 +1,47 @@
 from langchain_pinecone import PineconeVectorStore
+from langchain_huggingface import HuggingFaceEmbeddings
 import sys
 import os
+from dotenv import load_dotenv
 from decouple import config
 
 from split_text import semantic_split_text
 
-def save_vector_to_pinecone(vectors, index_name="afrohistorian"):
+def save_vector_to_pinecone(documents, index_name="afrohistorian"):
     """
     Save vectors to a Pinecone index.
 
     Args:
-        vectors (list<Embeddings>): List of vectors to save.
+        documents (list<Documents>): List of vectors to save.
         index_name (str): Name of the Pinecone index.
     """
-    # Get the Pinecone API key and environment from environment variables
-    pinecone_api_key = config("PINECONE_API_KEY", default="my-pinecone-api-key")
-    print(f"Debug: Pinecone API Key: {pinecone_api_key}")
+    # Load environment variables from a .env file
+    load_dotenv()
+
+    # Access environment variables directly using os.getenv()
+    pinecone_api_key = os.getenv("PINECONE_API_KEY")
+    pinecone_index_name = os.getenv("PINECONE_INDEX_NAME", index_name)
+
+    # Check if API key and index name were loaded
+    if not pinecone_api_key or not pinecone_index_name:
+        print(
+            "Error: Pinecone API key or index name not found in environment variables."
+        )
+        return False
+
+    print(f"Debug: Using Pinecone Index: {pinecone_index_name}")
+
     try:
-        PineconeVectorStore(index_name=index_name, embedding=vectors,
-                            pinecone_api_key=pinecone_api_key)
+        # Initialize the embeddings model
+        embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
+        # Initialize the vector store using the loaded environment variables
+        vector_store = PineconeVectorStore(index_name=pinecone_index_name,
+                                           embedding=embeddings,)
+        print(f"Debug: Pinecone Vector Store initialized: {vector_store}")
+
+        # Add documents to the Pinecone index
+        # This is the only code unchanged
+        vector_store.add_documents(documents=documents)
         return True
     except Exception as e:
         print(f"Error saving vectors to Pinecone: {e}")
@@ -40,10 +63,41 @@ def retrieve_vector_from_pinecone(query:str, index_name:str="afrohistorian",
     """
     # TODO: Consider removing the k parameter and always using score_threshold
     # to filter results based on relevance.
-    # Get the Pinecone API key and environment from environment variables
-    pinecone_api_key = config("PINECONE_API_KEY", default="my-pinecone-api-key")
+    # Load environment variables from a .env file
+    load_dotenv()
+
+    # Access environment variables directly using os.getenv()
+    pinecone_api_key = os.getenv("PINECONE_API_KEY")
+    pinecone_index_name = os.getenv("PINECONE_INDEX_NAME", index_name)
+
+    # Check if API key and index name were loaded
+    if not pinecone_api_key or not pinecone_index_name:
+        print(
+            "Error: Pinecone API key or index name not found in environment variables."
+        )
+        return {
+            "status": "Error",
+            "error": "Pinecone API key or index name not found in environment variables.",
+            "results": []
+        }
+    print(f"Debug: Using Pinecone Index: {pinecone_index_name}")
+
+
     try:
-        vector_store = PineconeVectorStore(index_name=index_name, pinecone_api_key=pinecone_api_key)
+        # Initialize the embeddings model
+        embeddings = HuggingFaceEmbeddings(
+            model_name="sentence-transformers/all-mpnet-base-v2"
+        )
+
+        # Initialize the vector store using the loaded environment variables
+        print("Initializing Pinecone Vector store...")
+        vector_store = PineconeVectorStore(index_name=index_name,
+                                           embedding=embeddings,
+                                           pinecone_api_key=pinecone_api_key)
+        print("Pinecone Vector Store initialized.")
+
+        # Retrieve documents from the Pinecone index
+        print("Retrieving documents from Pinecone...")
         retriever = vector_store.as_retriever(
             search_type="similarity",
             search_kwargs={"k": top_k, "score_threshold": 0.6,}
@@ -94,7 +148,11 @@ def main():
         text = file.read()
 
     # Split the text into semantic chunks
-    chunks = semantic_split_text(text)
+    chunks = semantic_split_text(text, metadata={"source": file_path,
+                                                 "author": "Multiple",
+                                                 "title": "West African "
+                                                          "History", "year":
+                                                     "2018"})
     if not chunks:
         print("Error: No chunks created from the text")
         sys.exit(1)
@@ -108,7 +166,23 @@ def main():
         print("Error uploading chunks to Pinecone")
         sys.exit(1)
 
+def check_vector_store():
+    """
+    Check if the Pinecone vector store is accessible.
+    """
+    question = "What constituted the Trans-saharan trade?"
+    result = retrieve_vector_from_pinecone(query=question,
+                                           index_name="afrohistorian", top_k=1)
+    if result["status"] == "Success":
+        print("Pinecone vector store is accessible.")
+        print("Vector store returned the following results:")
+        for res in result["results"]:
+            print(res)
+    else:
+        print(f"Error accessing Pinecone vector store: {result['error']}")
+        sys.exit(1)
+
 if __name__ == "__main__":
-    input("Please input the path to the text file you want to "
-                      "embed and upload to Pinecone:\n")
+    print(f"Accessing {sys.argv[1]} for text input...")
+    input("Please confirm if the file_path argument is set correctly. Press Enter to continue...")
     main()
