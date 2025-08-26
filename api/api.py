@@ -1,4 +1,5 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, \
+    UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 import json
 import asyncio
@@ -15,7 +16,7 @@ app = FastAPI()
 # Add CORS middleware for frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000",], # TODO: Update with frontend url
+    allow_origins=["http://localhost:5173",], # TODO: Update with frontend url
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -182,3 +183,35 @@ async def get_active_connections():
         "active_connections": len(manager.active_connections),
         "user_connections": list(manager.user_connections.keys())
     }
+
+# Endpoints for document management
+@app.post("/upload")
+async def upload_document(file: UploadFile):
+    # Handle PDF upload, conversion, and vectorization
+    pass
+
+@app.get("/documents")
+async def list_documents():
+    # Return list of uploaded documents with status
+    pass
+
+@app.delete("/documents/{doc_id}")
+async def delete_document(doc_id: str):
+    # Remove document from vector database
+    pass
+
+@app.get("/documents/{doc_id}/status")
+async def get_processing_status(doc_id: str):
+    # Check if document is still processing
+    pass
+
+# Endpoints for user authentication
+@app.post("/auth/signup")
+async def signup(username: str, password: str):
+    # Handle user signup
+    pass
+
+@app.post("/auth/login")
+async def login(username: str, password: str):
+    # Handle user login and return token
+    pass
