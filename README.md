@@ -26,7 +26,7 @@ User Query → Vector Search → Context Retrieval → GPT Response → Final An
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/RashnerdUX/Afrohistorian.git
 cd Afrohistorian
 ```
 
@@ -179,11 +179,11 @@ Key libraries used:
 
 ## License
 
-[Add your license information here]
+MIT License
 
 ## Support
 
-For questions or support, please [add contact information or create an issue in the repository].
+For questions or support, please email me at [akhigbek6@gmail.com](mailto:akhigbek6@gmail.com) or create an issue in the repository.
 
 ## Roadmap
 
